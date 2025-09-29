@@ -1,0 +1,104 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: 210 20% 98%;
+  --foreground: 222 47% 11%;
+
+  --card: 0 0% 100%;
+  --card-foreground: 222 47% 11%;
+
+  --popover: 0 0% 100%;
+  --popover-foreground: 222 47% 11%;
+
+  /* PRIMÁRIA: pode trocar depois pelo azul da marca */
+  --primary: 221 83% 53%;           /* ~ #2563eb (tailwind blue-600) */
+  --primary-foreground: 210 40% 98%;
+
+  --secondary: 210 40% 96%;
+  --secondary-foreground: 222 47% 11%;
+
+  --muted: 210 40% 96%;
+  --muted-foreground: 215 20% 35%;
+
+  --accent: 210 40% 96%;
+  --accent-foreground: 222 47% 11%;
+
+  --border: 214 32% 91%;
+  --input: 214 32% 91%;
+  --ring: var(--primary);
+
+  /* Faz o SO usar paleta clara para controles nativos */
+  color-scheme: light;
+}
+
+.dark {
+  --background: 222 40% 10%;          /* fundo da página ~ #0e1524 */
+  --foreground: 210 40% 96%;
+
+  --card: 222 32% 16%;                /* superfícies ~ #1a2333 */
+  --card-foreground: 210 40% 96%;
+
+  --popover: 222 32% 16%;
+  --popover-foreground: 210 40% 96%;
+
+  --primary: 221 83% 60%;             /* seu azul de marca no dark */
+  --primary-foreground: 222 47% 11%;
+
+  --secondary: 222 30% 18%;
+  --secondary-foreground: 210 40% 98%;
+
+  --muted: 222 28% 14%;
+  --muted-foreground: 215 20% 70%;
+
+  --accent: 222 30% 18%;
+  --accent-foreground: 210 40% 98%;
+
+  --border: 222 20% 22%;              /* separadores mais visíveis */
+  --input: 222 20% 22%;
+  --ring: 221 83% 60%;
+
+  /* Faz o SO usar paleta escura para controles nativos */
+  color-scheme: dark;
+}
+
+@layer base {
+  * { @apply border-border; }
+  body { @apply bg-background text-foreground; }
+}
+
+/* ===== Ajustes úteis ===== */
+
+/* Seleção de texto alinhada à marca */
+::selection {
+  background: hsl(var(--primary) / 0.18);
+  color: hsl(var(--foreground));
+}
+
+/* Foco de teclado com ring visível (acessibilidade) */
+:where(button, [type="button"], [type="submit"], [type="reset"], a, input, textarea, select, [role="button"]):focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px hsl(var(--ring) / 0.5);
+  border-color: hsl(var(--ring) / 0.6);
+}
+
+/* Scrollbar sutil que respeita o tema */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: hsl(var(--muted-foreground) / 0.4) transparent;
+}
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+*::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted-foreground) / 0.35);
+  border-radius: 9999px;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground) / 0.5);
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
