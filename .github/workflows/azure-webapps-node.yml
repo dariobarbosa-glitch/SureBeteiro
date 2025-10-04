@@ -13,7 +13,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # Garante variáveis no App Service (opcional, mas ajuda)
+      # 🔐 Faz login no Azure usando o Publish Profile (sem precisar de Service Principal)
+      - name: Azure login (publish profile)
+        uses: azure/login@v2
+        with:
+          credential-type: publish_profile
+          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE }}
+
+      # ⚙️ Garante as App Settings no App Service
       - name: Ensure App Settings on Azure
         uses: azure/appservice-settings@v1
         with:
@@ -29,7 +36,7 @@ jobs:
               { "name": "NEXT_TELEMETRY_DISABLED", "value": "1" }
             ]
 
-      # Deploy do código-fonte da pasta "project" (apenas 1 'package:' aqui!)
+      # 🚀 Faz o deploy do código (pasta "project"); Oryx no Azure faz npm install/build
       - name: Deploy source to Azure Web App
         uses: azure/webapps-deploy@v3
         with:
