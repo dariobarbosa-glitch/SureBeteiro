@@ -1,9 +1,9 @@
+# .github/workflows/azure-webapps-node.yml
 name: Deploy to Azure Web App
 
 on:
   push:
-    branches: [ "main" ]
-  workflow_dispatch:
+    branches: [ main ]
 
 jobs:
   deploy:
@@ -13,33 +13,38 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # 🔐 Faz login no Azure usando o Publish Profile (sem precisar de Service Principal)
+      - name: Use Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install deps (CI)
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      # ✅ LOGIN CORRETO COM PUBLISH PROFILE
       - name: Azure login (publish profile)
         uses: azure/login@v2
         with:
-          credential-type: publish_profile
-          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE }}
+          auth-type: 'publish-profile'
+          creds: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE }}
 
-      # ⚙️ Garante as App Settings no App Service
+      # Opcional: configurar app settings
       - name: Ensure App Settings on Azure
         uses: azure/appservice-settings@v1
         with:
-          app-name: surebeteiro-web
-          app-settings-json: |
+          app-name: 'surebeteiro-web'
+          app-settings-json: >
             [
-              { "name": "NEXT_PUBLIC_SITE_URL", "value": "${{ secrets.NEXT_PUBLIC_SITE_URL }}" },
-              { "name": "NEXT_PUBLIC_SUPABASE_URL", "value": "${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}" },
-              { "name": "NEXT_PUBLIC_SUPABASE_ANON_KEY", "value": "${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}" },
-              { "name": "WEBSITE_NODE_DEFAULT_VERSION", "value": "~20" },
-              { "name": "SCM_DO_BUILD_DURING_DEPLOYMENT", "value": "1" },
-              { "name": "NPM_CONFIG_PRODUCTION", "value": "false" },
-              { "name": "NEXT_TELEMETRY_DISABLED", "value": "1" }
+              {"name":"NEXT_PUBLIC_SUPABASE_URL","value":"${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}","slotSetting":false},
+              {"name":"NEXT_PUBLIC_SUPABASE_ANON_KEY","value":"${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}","slotSetting":false},
+              {"name":"NEXT_PUBLIC_SITE_URL","value":"${{ secrets.NEXT_PUBLIC_SITE_URL }}","slotSetting":false}
             ]
 
-      # 🚀 Faz o deploy do código (pasta "project"); Oryx no Azure faz npm install/build
-      - name: Deploy source to Azure Web App
+      - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
         with:
-          app-name: surebeteiro-web
-          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE }}
-          package: project
+          app-name: 'surebeteiro-web'
+          package: .
