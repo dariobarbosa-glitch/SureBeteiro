@@ -5,11 +5,6 @@ on:
     branches: [ "main" ]
   workflow_dispatch:
 
-# todos os "run:" abaixo executam dentro da pasta project
-defaults:
-  run:
-    working-directory: project
-
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -18,24 +13,29 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      # 1) Garante variáveis no App Service (usadas no build e no runtime)
+      - name: Ensure App Settings on Azure
+        uses: azure/appservice-settings@v1
         with:
-          node-version: "20"
+          app-name: surebeteiro-web
+          app-settings-json: |
+            [
+              { "name": "NEXT_PUBLIC_SITE_URL", "value": "${{ secrets.NEXT_PUBLIC_SITE_URL }}" },
+              { "name": "NEXT_PUBLIC_SUPABASE_URL", "value": "${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}" },
+              { "name": "NEXT_PUBLIC_SUPABASE_ANON_KEY", "value": "${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}" },
 
-      - name: Install dependencies
-        run: npm ci
+              { "name": "WEBSITE_NODE_DEFAULT_VERSION", "value": "~20" },
+              { "name": "SCM_DO_BUILD_DURING_DEPLOYMENT", "value": "1" },
+              { "name": "NPM_CONFIG_PRODUCTION", "value": "false" },
+              { "name": "NEXT_TELEMETRY_DISABLED", "value": "1" }
+            ]
 
-      - name: Build
-        run: npm run build
-        env:
-          NEXT_PUBLIC_SITE_URL: ${{ secrets.NEXT_PUBLIC_SITE_URL }}
-          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-
-      - name: Deploy to Azure Web App
+      # 2) Faz deploy do código-fonte (pasta project) e o Azure (Oryx) faz o build lá
+      - name: Deploy source to Azure Web App
         uses: azure/webapps-deploy@v3
         with:
-          app-name: "surebeteiro-web"
+          app-name: surebeteiro-web
           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE }}
+          package: project
+
           package: "project"
