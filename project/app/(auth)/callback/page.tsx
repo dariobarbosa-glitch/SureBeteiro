@@ -12,7 +12,6 @@ export default function AuthCallback() {
 
   useEffect(() => {
     (async () => {
-      // 1) Erro do provedor? Volta pro login.
       const errorDesc = params.get('error_description');
       if (errorDesc) {
         setMsg(decodeURIComponent(errorDesc));
@@ -20,7 +19,6 @@ export default function AuthCallback() {
         return;
       }
 
-      // 2) Fluxo “novo” (PKCE / confirm e-mail / magic link) -> vem com ?code=
       const code = params.get('code');
       if (code) {
         const { error } = await supabase.auth.exchangeCodeForSession(code);
@@ -31,11 +29,10 @@ export default function AuthCallback() {
         }
       }
 
-      // 3) Depois da troca, garante que a sessão existe e decide o destino.
       const { data: { session } } = await supabase.auth.getSession();
       router.replace(session ? '/dashboard' : '/sign-in');
     })();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (

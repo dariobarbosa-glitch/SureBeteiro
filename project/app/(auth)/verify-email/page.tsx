@@ -1,4 +1,3 @@
-// app/(auth)/verify-email/page.tsx
 'use client';
 
 import { useState } from 'react';
@@ -6,8 +5,6 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/button';
-// opcional: ícone
-// import { Mail } from 'lucide-react';
 
 export default function VerifyEmailPage() {
   const params = useSearchParams();
@@ -18,6 +15,10 @@ export default function VerifyEmailPage() {
   const [info, setInfo] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  const siteUrl =
+    process.env.NEXT_PUBLIC_SITE_URL ??
+    (typeof window !== 'undefined' ? window.location.origin : '');
+
   const handleResend = async () => {
     if (!email) {
       setError('Não há e-mail na URL para reenviar.');
@@ -27,9 +28,13 @@ export default function VerifyEmailPage() {
     setInfo(null);
     setError(null);
 
+    // eslint-disable-next-line no-console
+    console.log('[RESEND] emailRedirectTo =>', `${siteUrl}/callback`);
+
     const { error } = await supabase.auth.resend({
       type: 'signup',
       email,
+      options: { emailRedirectTo: `${siteUrl}/callback` },
     });
 
     if (error) setError(error.message);
@@ -40,10 +45,6 @@ export default function VerifyEmailPage() {
   return (
     <main className="p-6 max-w-xl mx-auto">
       <div className="space-y-4">
-        {/* <div className="flex items-center gap-3">
-          <Mail className="h-6 w-6" />
-          <h1 className="text-2xl font-bold">Verifique seu e-mail</h1>
-        </div> */}
         <h1 className="text-2xl font-bold">Verifique seu e-mail</h1>
         <p>
           Enviamos um link de confirmação para {email ? <strong>{email}</strong> : 'seu e-mail'}.
@@ -54,9 +55,7 @@ export default function VerifyEmailPage() {
         {error && <p className="text-red-500 text-sm">{error}</p>}
 
         <div className="flex gap-3">
-          <Button asChild>
-            <Link href="/sign-in">Voltar para o login</Link>
-          </Button>
+          <Button asChild><Link href="/sign-in">Voltar para o login</Link></Button>
           <Button variant="outline" onClick={handleResend} disabled={sending || !email}>
             {sending ? 'Reenviando…' : 'Reenviar e-mail'}
           </Button>

@@ -1,5 +1,4 @@
 'use client';
-'use client';
 
 import { useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
@@ -19,7 +18,6 @@ export default function SignInPage() {
   const router = useRouter();
   const supabase = createClient();
 
-  // ✅ Usa o domínio do .env ou, em dev, o origin atual (ex.: http://localhost:3000)
   const siteUrl =
     process.env.NEXT_PUBLIC_SITE_URL ??
     (typeof window !== 'undefined' ? window.location.origin : '');
@@ -37,8 +35,10 @@ export default function SignInPage() {
 
       if (error) throw error;
 
-      router.push('/dashboard'); // rota que EXISTE no app
+      router.push('/dashboard');
     } catch (err: any) {
+      // eslint-disable-next-line no-console
+      console.error('[SIGN-IN]', err);
       setError(err?.message ?? 'Não foi possível entrar.');
     } finally {
       setLoading(false);
@@ -59,27 +59,29 @@ export default function SignInPage() {
         return;
       }
 
+      // Log útil p/ conferir env e redirect
+      // eslint-disable-next-line no-console
+      console.log('[SIGN-UP] emailRedirectTo =>', `${siteUrl}/callback`);
+
       const { data, error } = await supabase.auth.signUp({
         email: emailClean,
         password: passClean,
         options: {
-          // ✅ tem que combinar com a rota real do app: /callback
-          // (se você mover sua página para app/auth/callback/page.tsx, troque aqui para /auth/callback)
           emailRedirectTo: `${siteUrl}/callback`,
         },
       });
 
       if (error) throw error;
 
-      // Com "Confirm email" ON, ainda NÃO existe sessão → mostrar tela de aviso
       if (!data.session) {
         router.push(`/verify-email?email=${encodeURIComponent(emailClean)}`);
         return;
       }
 
-      // Se "Confirm email" estivesse OFF, já existiria sessão:
-      router.push('/dashboard'); // ou '/onboarding' se você tiver essa rota
+      router.push('/dashboard');
     } catch (err: any) {
+      // eslint-disable-next-line no-console
+      console.error('[SIGN-UP]', err);
       const msg = err?.message ?? 'Não foi possível criar sua conta.';
       if (/User already registered/i.test(msg)) setError('Este e-mail já possui conta.');
       else if (/weak password/i.test(msg)) setError('Senha fraca. Use 8+ caracteres.');
@@ -111,24 +113,11 @@ export default function SignInPage() {
           <form onSubmit={handleSignIn} className="space-y-4">
             <div>
               <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
+              <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
             </div>
             <div>
               <Label htmlFor="password">Senha</Label>
-              <Input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                minLength={6}
-              />
+              <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} />
             </div>
 
             {error && (
@@ -142,13 +131,7 @@ export default function SignInPage() {
               <Button type="submit" className="w-full" disabled={loading}>
                 {loading ? 'Entrando...' : 'Entrar'}
               </Button>
-              <Button
-                type="button"
-                variant="outline"
-                className="w-full"
-                onClick={handleSignUp}
-                disabled={loading}
-              >
+              <Button type="button" variant="outline" className="w-full" onClick={handleSignUp} disabled={loading}>
                 Criar Conta
               </Button>
             </div>

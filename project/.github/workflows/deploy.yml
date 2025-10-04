@@ -2,39 +2,47 @@ name: Deploy to Azure App Service
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main ]       # dispara no push da main
+  workflow_dispatch:          # permite rodar manualmente pela aba Actions
 
 jobs:
-  build-and-deploy:
+  deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Use Node 20
-        uses: actions/setup-node@v4
+      # 1) Garante que o App Service tenha todas as variáveis necessárias
+      #    Essas variáveis ficam disponíveis no build (Oryx) e em runtime.
+      - name: Set Azure App Settings (env vars)
+        uses: azure/appservice-settings@v1
         with:
-          node-version: 20
+          app-name: surebeteiro-web
+          app-settings-json: |
+            [
+              { "name": "NEXT_PUBLIC_SITE_URL", "value": "${{ secrets.NEXT_PUBLIC_SITE_URL }}" },
+              { "name": "NEXT_PUBLIC_SUPABASE_URL", "value": "${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}" },
+              { "name": "NEXT_PUBLIC_SUPABASE_ANON_KEY", "value": "${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}" },
 
-      - name: Install deps (CI)
-        run: npm ci
+              // Build/runtime em Node 20 no App Service
+              { "name": "WEBSITE_NODE_DEFAULT_VERSION", "value": "~20" },
 
-      - name: Build
-        run: npm run build
-        env:
-          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-          NEXT_PUBLIC_SITE_URL: ${{ secrets.NEXT_PUBLIC_SITE_URL }}
+              // Força build no Azure ao fazer o deploy do código-fonte
+              { "name": "SCM_DO_BUILD_DURING_DEPLOYMENT", "value": "1" },
 
-      - name: Zip artifact
-        run: |
-          zip -r release.zip .next public package.json package-lock.json next.config.js node_modules
+              // Garante que devDependencies também sejam instaladas no build do Next
+              { "name": "NPM_CONFIG_PRODUCTION", "value": "false" },
 
+              // (opcional) desabilita telemetria do Next
+              { "name": "NEXT_TELEMETRY_DISABLED", "value": "1" }
+            ]
+
+      # 2) Faz o deploy do código-fonte. O Azure (Oryx) roda npm install/build automaticamente,
+      #    usando as App Settings acima como variáveis de ambiente.
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
         with:
           app-name: surebeteiro-web
-          slot-name: production
-          package: release.zip
           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE }}
+          package: .            # envia o repositório (código-fonte) para o Azure
